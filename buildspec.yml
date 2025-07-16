@@ -14,7 +14,7 @@ phases:
   build:
     commands:
       - echo Building backend...
-      - docker build -t backend ./backend
+      - docker build -t backend .
       - docker tag backend:latest 577638398727.dkr.ecr.eu-west-2.amazonaws.com/backend:$IMAGE_TAG
       - docker tag backend:latest 577638398727.dkr.ecr.eu-west-2.amazonaws.com/backend:latest
 
