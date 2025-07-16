@@ -8,7 +8,6 @@ RUN npm install
 RUN npm install @fastify/static dotenv
 RUN npm install @fastify/cors
 
-
 COPY . .
 
 COPY ./src/prisma ./prisma
