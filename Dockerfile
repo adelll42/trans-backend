@@ -4,7 +4,7 @@ FROM public.ecr.aws/docker/library/node:18-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci --include=dev
 RUN npm install @fastify/static dotenv
 RUN npm install @fastify/cors
 
