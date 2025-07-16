@@ -1,51 +1,31 @@
 version: 0.2
 
-env:
-  variables:
-    AWS_REGION: eu-west-2
-
 phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing backend dependencies...
+      - npm ci
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 577638398727.dkr.ecr.eu-west-2.amazonaws.com
-
+      - $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI)
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
   build:
     commands:
-      - echo Building backend...
-      - docker build -t backend ./backend
-      - docker tag backend:latest 577638398727.dkr.ecr.eu-west-2.amazonaws.com/backend:latest
-
-      - echo Building frontend...
-      - docker build -t frontend ./frontend
-      - docker tag frontend:latest 577638398727.dkr.ecr.eu-west-2.amazonaws.com/frontend:latest
-
-      - echo Building nginx...
-      - docker build -t nginx -f nginx/Dockerfile .
-      - docker tag nginx:latest 577638398727.dkr.ecr.eu-west-2.amazonaws.com/nginx:latest
-
+      - echo Building the frontend...
+      - npm run build
+      - echo Building Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - echo Pushing backend image...
-      - docker push 577638398727.dkr.ecr.eu-west-2.amazonaws.com/backend:latest
-
-      - echo Pushing frontend image...
-      - docker push 577638398727.dkr.ecr.eu-west-2.amazonaws.com/frontend:latest
-
-      - echo Pushing nginx image...
-      - docker push 577638398727.dkr.ecr.eu-west-2.amazonaws.com/nginx:latest
-
-      
-      - echo Generating imagedefinitions files...
-      - |
-        echo '[{"name":"backend","imageUri":"577638398727.dkr.ecr.eu-west-2.amazonaws.com/backend:latest"}]' > backend-imagedefinitions.json
-      - |
-        echo '[{"name":"frontend","imageUri":"577638398727.dkr.ecr.eu-west-2.amazonaws.com/frontend:latest"}]' > frontend-imagedefinitions.json
-      - |
-        echo '[{"name":"nginx","imageUri":"577638398727.dkr.ecr.eu-west-2.amazonaws.com/nginx:latest"}]' > nginx-imagedefinitions.json
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing imagedefinitions.json...
+      - printf '[{"name":"FrontendContainer","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
-  files:
-    - backend-imagedefinitions.json
-    - frontend-imagedefinitions.json
-    - nginx-imagedefinitions.json
+  files: imagedefinitions.json
