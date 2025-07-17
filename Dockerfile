@@ -19,5 +19,6 @@ RUN mkdir -p ./prisma/images
 
 EXPOSE 3000
 
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
+
 
