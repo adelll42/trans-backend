@@ -13,7 +13,6 @@ COPY . .
 COPY ./src/prisma ./prisma
 
 RUN npx prisma generate
-RUN npx prisma migrate deploy
 
 RUN mkdir -p ./prisma/images
 
